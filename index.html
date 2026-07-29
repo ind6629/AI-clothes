@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 搭配预览演示</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">搭配预览</p>
+        <h1>AI 搭配造型演示</h1>
+        <p class="hero-copy">
+          一个完整的演示流程，包含衣橱库存管理、拖拽造型画布、保存搭配快照，以及可以代理图像生成的 Python 后端。
+        </p>
+      </div>
+      <div class="hero-card">
+        <label class="config-label" for="apiKey">OpenAI API 密钥</label>
+        <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off">
+        <label class="config-label" for="modelName">图像模型</label>
+        <input id="modelName" type="text" value="gpt-image-1" autocomplete="off">
+        <button id="saveConfigBtn" class="secondary-btn" type="button">保存配置</button>
+        <p class="config-tip">浏览器本地存储密钥。Python 后端发送图像请求。</p>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel inventory-panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">步骤 1</p>
+            <h2>衣橱库存</h2>
+          </div>
+          <select id="categoryFilter" aria-label="筛选类别">
+            <option value="all">全部</option>
+            <option value="tops">上装</option>
+            <option value="bottoms">下装</option>
+            <option value="outerwear">外套</option>
+            <option value="shoes">鞋子</option>
+            <option value="bags">包包</option>
+            <option value="accessories">配饰</option>
+          </select>
+        </div>
+        <div class="upload-panel">
+          <div class="upload-grid">
+            <input id="itemNameInput" type="text" placeholder="服装名称">
+            <select id="itemCategoryInput" aria-label="选择服装类别">
+              <option value="tops">上装</option>
+              <option value="bottoms">下装</option>
+              <option value="outerwear">外套</option>
+              <option value="shoes">鞋子</option>
+              <option value="bags">包包</option>
+              <option value="accessories">配饰</option>
+            </select>
+            <input id="itemDescInput" type="text" placeholder="简短的风格说明">
+            <input id="itemImageInput" type="file" accept="image/*">
+          </div>
+          <button id="uploadItemBtn" class="secondary-btn" type="button">添加真实服装照片</button>
+        </div>
+        <div id="inventoryGrid" class="inventory-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="panel canvas-panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">步骤 2</p>
+            <h2>造型画布</h2>
+          </div>
+          <div class="action-row">
+            <button id="clearCanvasBtn" class="ghost-btn" type="button">清空</button>
+            <button id="saveOutfitBtn" class="ghost-btn" type="button">保存搭配</button>
+          </div>
+        </div>
+
+        <div id="dropzone" class="dropzone" aria-label="搭配拖放区域">
+          <div class="dropzone-overlay">
+            <p>将单品拖放至此处</p>
+            <span>移动它们来快速创建造型概念。</span>
+          </div>
+        </div>
+
+        <div class="notes-block">
+          <label for="stylingPrompt">风格备注</label>
+          <textarea id="stylingPrompt" rows="4" placeholder="示例：极简奢华、初秋、女性模特、电商拍摄"></textarea>
+        </div>
+
+        <div class="saved-panel">
+          <div class="prompt-head">
+            <h3>模特照片</h3>
+          </div>
+          <div class="model-upload">
+            <input id="modelPhotoInput" type="file" accept="image/*">
+            <button id="clearModelPhotoBtn" class="ghost-btn" type="button">清除模特照片</button>
+          </div>
+          <div id="modelPhotoPreview" class="model-preview empty">
+            <span>上传模特图像，在生成过程中保持姿势和人物参考。</span>
+          </div>
+        </div>
+
+        <div class="saved-panel">
+          <div class="prompt-head">
+            <h3>已保存搭配</h3>
+          </div>
+          <div id="outfitList" class="outfit-list"></div>
+        </div>
+      </section>
+
+      <section class="panel result-panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">步骤 3</p>
+            <h2>预览</h2>
+          </div>
+          <button id="generateBtn" class="primary-btn" type="button">生成图像</button>
+        </div>
+
+        <div class="result-card">
+          <div id="statusPill" class="status-pill idle">等待中</div>
+          <div id="previewStage" class="preview-stage">
+            <div class="preview-placeholder">
+              <p>生成的结果将在此显示</p>
+              <span>使用后端 API 密钥代理进行完整演示，或先展示提示流程。</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="prompt-card">
+          <div class="prompt-head">
+            <h3>AI 提示词</h3>
+            <button id="copyPromptBtn" class="ghost-btn" type="button">复制提示词</button>
+          </div>
+          <pre id="promptPreview"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="inventoryItemTemplate">
+    <article class="item-card" draggable="true">
+      <div class="item-thumb"></div>
+      <div class="item-meta">
+        <h3></h3>
+        <p class="item-category"></p>
+        <p class="item-desc"></p>
+      </div>
+    </article>
+  </template>
+
+  <div id="imageLightbox" class="lightbox" hidden>
+    <button id="lightboxCloseBtn" class="lightbox-close" type="button" aria-label="Close image preview">x</button>
+    <img id="lightboxImage" src="" alt="Expanded generated preview">
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
