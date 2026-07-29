@@ -1,4 +1,4 @@
-# AI Outfit Styling Demo
+# AI Outfit
 
 This version includes a Python backend so the project can be demoed as a small full-stack app.
 
